@@ -16,6 +16,7 @@
 
 #include <ArduinoJson.h>
 
+#define DEBUG 1
 
 bool shouldSaveConfig = false;
 bool failedComm=-1;
@@ -33,6 +34,7 @@ char _health_channel[] = "_health";
 char _rootDomain[64]="data.demo.konkerlabs.net";
 int _rootPort=80;
 int _httpPort=80;
+int _fwPort=80;
 char _httpDomain[255]="data.demo.konkerlabs.net";
 unsigned long __httpCheckTimout = 5*60000L;
 unsigned long __httpLastCheckTS = 0;
@@ -43,17 +45,19 @@ char *getChipId(){
 }
 
 bool interpretHTTPCode(int httpCode){
-  
-  if (httpCode > 0 && httpCode<300) { //Check the returning code
-    return 1;
-
-  }else{
-    Serial.println(String(httpCode));
-    return 0;
-  }
+    if (httpCode > 0 && httpCode<300) { //Check the returning code
+        return 1;
+    }else{
+        if(DEBUG)
+        {
+            Serial.print("HTTP Code: ");
+            Serial.println(String(httpCode));
+        }
+        return 0;
+    }
 }
 
-void urldecode2(char *dst, const char *src){  
+void urldecode2(char *dst, const char *src){
   char a, b;
   while (*src) {
           if ((*src == '%') &&
@@ -95,7 +99,7 @@ String urldecode(String source){
 
 void mydelay(unsigned long _delay) {
         delay(_delay);
-        return; 
+        return;
         unsigned long now = millis();
         while ((millis() - now) < _delay) {
                 // do nothing
