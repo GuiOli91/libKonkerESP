@@ -122,6 +122,7 @@ bool pubMQTT(char const channel[], char const msg[]){
         Serial.println("pubCode:" + (String)pubCode);
         return 1;
     }
+    Serial.println("");
 }
 
 bool subMQTT(char const channel[],CHANNEL_CALLBACK_SIGNATURE){

@@ -31,12 +31,21 @@ class ESPHTTPKonkerUpdate: public ESP8266HTTPUpdate{
   public:
   t_httpUpdate_return update(const String& host, uint16_t port, const String& uri = "/",
                                const String& currentVersion = ""){
+    t_httpUpdate_return ret;
     HTTPClient http;
     http.begin(host, port, uri);
 
+    Serial.print("Fetching binary at: ");
+    Serial.println(host + ":" + String(port) + uri);
+
     Serial.println("Authorizing...");
     http.setAuthorization(device_login, device_pass);
-    return ESP8266HTTPUpdate::handleUpdate(http, currentVersion, false);
+    Serial.println("Authorization successfull");
+    ret = ESP8266HTTPUpdate::handleUpdate(http, currentVersion, false);
+
+    Serial.println("Return code: " + ESP8266HTTPUpdate::getLastErrorString());
+
+    return ret;
   }
 };
 #else
@@ -56,7 +65,7 @@ class ESPHTTPKonkerUpdate: public ESP32HTTPUpdate{
 
 void getVersion(String strPayload, char *version){
     if(parse_JSON_item(strPayload,"version",version)){
-        Serial.println("Got version =" + String(version));
+        Serial.println("Got version = " + String(version));
     }else{
         strcpy(version,"");
         Serial.println("Failed to parse version");
@@ -67,7 +76,7 @@ void updateSucessCallBack(char *version){
     Serial.println("[update] Update ok, sending confirmation.");
     bool subCode=0;
 
-    String fwUpdateURL= "http://" + String(_rootDomain) + String (":") + String(_rootPort) + String("/firmware/") + String(device_login);
+    String fwUpdateURL= "http://" + String(_httpDomain) + String (":") + String(_httpPort) + String("/registry-data/firmware/") + String(device_login);
     HTTPClient http;  //Declare an object of class HTTPClient
     http.begin(fwUpdateURL);  //Specify request destination
     http.addHeader("Content-Type", "application/json");
@@ -79,19 +88,19 @@ void updateSucessCallBack(char *version){
 
 
     Serial.println("Confirmantion send: " + fwUpdateURL+  + "; Body: " + smsg + "; httpcode: " + String(httpCode));
-    Serial.print(">");
+    // Serial.print(">");
 
     http.end();   //Close connection
 
-    Serial.print(">");
+    // Serial.print(">");
 
     subCode=interpretHTTPCode(httpCode);
 
     if (!subCode){
-        Serial.println("Update failed");
+        Serial.println("[Update callback] failed");
         return;
     }else{
-        Serial.println("Update sucess");
+        Serial.println("[Update callback] sucess");
         return;
     }
     Serial.println("failed");
@@ -171,19 +180,20 @@ void checkForUpdates(char *rootDomain,int rootPort, char *expectedVersion, UPDAT
             Serial.println("UPDATING....");
             ESPHTTPKonkerUpdate ESPhttpKonkerUpdate;
             ESPhttpKonkerUpdate.rebootOnUpdate(false);
-            t_httpUpdate_return ret = ESPhttpKonkerUpdate.update(String(rootDomain), rootPort, String("/firmware/") + String(device_login) +String("/binary"));
+            t_httpUpdate_return ret = ESPhttpKonkerUpdate.update(String(rootDomain), rootPort, String("/registry-data/firmware/") + String(device_login) +String("/binary"));
             switch(ret) {
                 case HTTP_UPDATE_FAILED:
-                    Serial.println("[Update] Update failed.");
+                    Serial.println("[Update] FW update failed.");
                     break;
                 case HTTP_UPDATE_NO_UPDATES:
-                    Serial.println("[Update] Update no Update.");
+                    Serial.println("[Update] No update.");
                     break;
                 case HTTP_UPDATE_OK:
                     updateSucessCallBack(version);
                     ESP.restart();
                     break;
             }
+            Serial.println("");
         }
     }
 }
