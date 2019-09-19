@@ -75,7 +75,6 @@ class ConfigWifi{
 
 ConfigWifi wifiConfig;
 
-
 void setIp(uint8_t first_octet, uint8_t second_octet, uint8_t third_octet, uint8_t fourth_octet){
 	wifiConfig.setIP(first_octet,second_octet,third_octet,fourth_octet);
 }
@@ -894,12 +893,12 @@ bool startAPForWifiCredentials(char *apName, int timoutMilis){
 
 	WiFi.disconnect(true);
 	mydelay(1000);
-	#ifndef ESP32
+#ifndef ESP32
 	(void)wifi_station_dhcpc_start();
-	#else
+#else
 	WiFi.config({ 0,0,0,0 }, { 0,0,0,0 }, { 0,0,0,0 });
 	//(void)tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
-	#endif
+#endif
 
 	return 1;
 }
@@ -1063,13 +1062,23 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
 		resetALL();
 	}
 
-  //tenta se conectar ao wifi configurado
-  //caso já exista o arquivo de wifi ele vai tentar se conectar
+    // imprime versão do Core e do SDK
+    // String coreV;
+    // coreV = ESP.getCoreVersion();
+    // const char * sdkV;
+    // sdkV = ESP.getSdkVersion();
+    // Serial.print(">>>>> Core: ");
+    // Serial.println(String(coreV));
+    // Serial.print(">>>>> SDK: ");
+    // Serial.println(String(sdkV));
+
+    //tenta se conectar ao wifi configurado
+    //caso já exista o arquivo de wifi ele vai tentar se conectar
     if(tryConnectClientWifi()){
         if(getPlataformCredentials((char*)"/crd.json")){
         	checkConnections();
         }
-    return;
+        return;
     }
 
 	int arquivoWifiPreConfigurado=0;
@@ -1165,11 +1174,11 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
 		if(!tryConnectClientWifi()){
 			Serial.println("Failed! Rebooting...");
 			mydelay(3000);
-			#ifndef ESP32
+#ifndef ESP32
 			ESP.reset();
-			#else
+#else
 			ESP.restart();
-			#endif
+#endif
 		}
 
 		Serial.println("WiFi configuration done!");

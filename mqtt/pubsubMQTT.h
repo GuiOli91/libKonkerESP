@@ -29,15 +29,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.print("] ");
 
   callSubChannelCallback(topic, payload, length);
-
 }
 
 bool connectMQTT(char r_server[], int r_port, char r_device_login[], char r_device_pass[]){
+    int connectCode = 0;
+
     if(client.connected()){
         Serial.print("Already connected to MQTT broker ");
-        //return 1;
+        return 1;
     }else{
-        Serial.print("Trying to connect to MQTT broker: ");
+        Serial.print("Going to connect to MQTT broker: ");
     }
 
     Serial.print("URI:" + String(r_server) + " Port:" + String(r_port));
@@ -45,18 +46,25 @@ bool connectMQTT(char r_server[], int r_port, char r_device_login[], char r_devi
     client.setServer(r_server, r_port);
     client.setCallback(callback);
 
-    Serial.print(" USER:" + String(r_device_login) + " PASSWD:" + String(r_device_pass));
+    Serial.println(" USER:" + String(r_device_login) + " PASSWD:" + String(r_device_pass));
 
-    int connectCode = client.connect(r_device_login, r_device_login, r_device_pass);
+    for(int i=0; i<5; i++)
+    {
+        Serial.println("Connection attempts left " + String(5 - i));
+        connectCode = client.connect(r_device_login, r_device_login, r_device_pass);
+        if(connectCode) break;
+        delay(1500);
+    }
 
-    Serial.println(" connectCode=" + String(connectCode));
+    Serial.print("ConnectCode = " + String(connectCode) + ". ");
 
     if (connectCode==1) { //Check the returning code
         Serial.println("Connected to MQTT broker");
         Serial.println("");
         return 1;
     }else{
-        Serial.println("Failed to connect to MQTT broker");
+        Serial.print("Failed to connect to MQTT broker.");
+        Serial.println(" State = " + String(client.state()));
         Serial.println("");
         appendToFile(healthFile,(char*)"1", _mqttFailureAdress);
         delay(3000);
@@ -79,7 +87,7 @@ void buildMQTTSUBTopic(char const channel[], char *topic){
     strcat (topic,device_login);
     strcat (topic,"/");
     strcat (topic,sub_dev_modifier);
-    strcat(topic,"/");
+    strcat (topic,"/");
     strcat (topic,channel);
 }
 
@@ -89,7 +97,7 @@ void buildMQTTPUBTopic(char const channel[], char *topic){
     strcat (topic,device_login);
     strcat (topic,"/");
     strcat (topic,pub_dev_modifier);
-    strcat(topic,"/");
+    strcat (topic,"/");
     strcat (topic,channel);
 }
 
@@ -108,6 +116,7 @@ bool pubMQTT(char const channel[], char const msg[]){
     if (pubCode!=1){
         Serial.println("failed");
         Serial.println("pubCode:" + (String)pubCode);
+        Serial.println("");
         failedComm=1;
         appendToFile(healthFile,(char*)"1", _mqttFailureAdress);
         delay(3000);
@@ -120,9 +129,9 @@ bool pubMQTT(char const channel[], char const msg[]){
     }else{
         Serial.println("sucess");
         Serial.println("pubCode:" + (String)pubCode);
+        Serial.println("");
         return 1;
     }
-    Serial.println("");
 }
 
 bool subMQTT(char const channel[],CHANNEL_CALLBACK_SIGNATURE){

@@ -24,9 +24,9 @@ void buildHTTPSUBTopic(char const channel[], char *topic){
         strcat (topic,"/");
         strcat (topic, "registry-data/"); // [MJ] Apenas para plataforma rodando localmente
         strcat (topic,sub_dev_modifier);
-        strcat(topic,"/");
+        strcat (topic,"/");
         strcat (topic,device_login);
-        strcat(topic,"/");
+        strcat (topic,"/");
         strcat (topic,channel);
     }else{
         strcpy (topic,"http://");
@@ -36,9 +36,9 @@ void buildHTTPSUBTopic(char const channel[], char *topic){
         strcat (topic,"/");
         strcat (topic, "registry-data/"); // [MJ] Apenas para plataforma rodando localmente
         strcat (topic,sub_dev_modifier);
-        strcat(topic,"/");
+        strcat (topic,"/");
         strcat (topic,device_login);
-        strcat(topic,"/");
+        strcat (topic,"/");
         strcat (topic,channel);
     }
 }

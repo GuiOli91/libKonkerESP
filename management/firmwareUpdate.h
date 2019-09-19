@@ -65,7 +65,7 @@ class ESPHTTPKonkerUpdate: public ESP32HTTPUpdate{
 
 void getVersion(String strPayload, char *version){
     if(parse_JSON_item(strPayload,"version",version)){
-        Serial.println("Got version = " + String(version));
+        Serial.println("New version = " + String(version));
     }else{
         strcpy(version,"");
         Serial.println("Failed to parse version");
@@ -146,6 +146,7 @@ bool hasUpdate(char *rootDomain,int rootPort, char *version){
   if (!subCode){
     Serial.println("Update request failed");
     Serial.println("");
+    strcpy(version,""); // [MJ] Se updatee falha, string da versão preenchida com vazio
   }else{
     Serial.println("Update request sucess");
     Serial.println("");
@@ -155,12 +156,11 @@ bool hasUpdate(char *rootDomain,int rootPort, char *version){
     int playloadSize=http.getSize();
     if (strPayload!="[]"){
       getVersion(strPayload,version);
-      return 1;
     }
   }
   http.end();   //Close connection
-  strcpy(version,""); // [MJ] Não entendi essa chamada
-  return 0;
+
+  return subCode;
 }
 
 void checkForUpdates(char *rootDomain,int rootPort, char *expectedVersion, UPDATE_SUCCESS_CALLBACK_SIGNATURE){
@@ -189,6 +189,7 @@ void checkForUpdates(char *rootDomain,int rootPort, char *expectedVersion, UPDAT
                     Serial.println("[Update] No update.");
                     break;
                 case HTTP_UPDATE_OK:
+                    // Serial.println("[Update] Not sending confirmation!!! D:D:D:D:");
                     updateSucessCallBack(version);
                     ESP.restart();
                     break;

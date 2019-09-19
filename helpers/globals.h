@@ -96,7 +96,6 @@ String urldecode(String source){
   return (String)decodedChrs;
 }
 
-
 void mydelay(unsigned long _delay) {
         delay(_delay);
         return;
@@ -105,7 +104,6 @@ void mydelay(unsigned long _delay) {
                 // do nothing
         }
 }
-
 
 #include "../helpers/subChanTuple.h"
 
