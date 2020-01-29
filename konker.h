@@ -5,6 +5,7 @@
 #include "./helpers/globals.h"
 #include "./helpers/fileHelper.h"
 #include "./helpers/jsonhelper.h"
+#include "./helpers/NTPHelper.h"
 #include <Ticker.h>
 #include <Crypto.h>
 #include "./rest/pubsubREST.h"
@@ -140,8 +141,16 @@ void setName(char newName[6]){
     strncpy(ChipId, stringNewName.c_str(),32);
 }
 
+void konkerCurrentTime(char * timestamp, unsigned int * ms)
+{
+    getTimeNTP(timestamp, ms);
+    Serial.println("From NTPHelper: ");
+    Serial.println(timestamp);
+}
+
 // [MJ] Loop principal
 void konkerLoop(){
+    updateNTP();
 #ifdef pubsubMQTT
 	MQTTLoop();
 #endif
@@ -1080,6 +1089,9 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
         }
         return;
     }
+
+    // [MJ] Inicia conexão com servidor NTP
+    startNTP();
 
 	int arquivoWifiPreConfigurado=0;
 
