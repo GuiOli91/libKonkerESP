@@ -11,11 +11,13 @@ NTPClient timeClient(ntpUDP, "192.168.0.123");
 void startNTP()
 {
     timeClient.begin();
+    Serial.println("[NTP] Client started");
 }
 
 void updateNTP()
 {
-    timeClient.update();
+    Serial.println("[NTP] Updating client");
+    timeClient.updateMs();
 }
 
 void getTimeNTP(char * timestamp, unsigned int *ms)
@@ -23,10 +25,10 @@ void getTimeNTP(char * timestamp, unsigned int *ms)
     unsigned long r;
 
     r = timeClient.getEpochTimeMs(ms);
-    Serial.println("From NTPClient [int]: " );
+    // Serial.print("From NTPClient [int]: " );
     Serial.println(r);
     sprintf(timestamp, "%lu", r);
-    Serial.println("From NTPClient: ");
+    // Serial.print("From NTPClient: ");
     Serial.println(timestamp);
 }
 

@@ -16,12 +16,15 @@
 #endif
 
 #include "../helpers/jsonhelper.h"
+#include "../helpers/NTPHelper.h"
+#include "../helpers/globals.h"
+#include "../mqtt/pubsubMQTT.h"
 
 #if !defined(ESP8266) || defined(ESP32)
 #include <functional>
 #define UPDATE_SUCCESS_CALLBACK_SIGNATURE std::function<void(char[16])> succes_update_callback
 #else
-#define UPDATE_SUCCESS_CALLBACK_SIGNATURE void (*succes_update_callback)(char[16])
+#define UPDATE_SUCCESS_CALLBACK_SIGNATURE void (*succes_update_callback)(char[16], char[16], unsigned int)
 #endif
 
 unsigned long _last_time_update_check=0;
@@ -72,9 +75,22 @@ void getVersion(String strPayload, char *version){
     }
 }
 
-void updateSucessCallBack(char *version){
-    Serial.println("[update] Update ok, sending confirmation.");
+void getCurrentTime(char * timestamp, unsigned int * ms)
+{
+    getTimeNTP(timestamp, ms);
+    Serial.print("Changing state at: ");
+    Serial.print(timestamp);
+    Serial.println(*ms);
+}
+
+void updateSucessCallBack(char *version, char *ts1, unsigned int ms1)
+{
+    char ts2[16] = {"\0"};
+    unsigned int ms2;
     bool subCode=0;
+
+    Serial.println("[Update] Update ok, sending confirmation.");
+    getCurrentTime(ts2, &ms2);
 
     String fwUpdateURL= "http://" + String(_httpDomain) + String (":") + String(_httpPort) + String("/registry-data/firmware/") + String(device_login);
     HTTPClient http;  //Declare an object of class HTTPClient
@@ -90,26 +106,36 @@ void updateSucessCallBack(char *version){
     Serial.println("Confirmantion send: " + fwUpdateURL+  + "; Body: " + smsg + "; httpcode: " + String(httpCode));
     // Serial.print(">");
 
+    String strPayload = http.getString();
+    Serial.print("[Update callback] response  body: ");
+    Serial.println(strPayload);
     http.end();   //Close connection
-
-    // Serial.print(">");
 
     subCode=interpretHTTPCode(httpCode);
 
     if (!subCode){
         Serial.println("[Update callback] failed");
-        return;
     }else{
         Serial.println("[Update callback] sucess");
-        return;
     }
-    Serial.println("failed");
-    Serial.println("");
+    // [MJ] Send timestamps to platform via MQTT
+    const int capacity = 1024; // JSON_OBJECT_SIZE(200);
+    StaticJsonDocument<capacity> jsonMSG;
+    char bufferJson[256];
+
+    jsonMSG["deviceId"] = NAME;
+    jsonMSG["ts1"] = ts1;
+    jsonMSG["ms1"] = ms1;
+    jsonMSG["ts2"] = ts2;
+    jsonMSG["ms2"] = ms2;
+    serializeJson(jsonMSG, bufferJson);
+
+    pubMQTT("timestamps", bufferJson);
 }
 
-bool hasUpdate(char *rootDomain,int rootPort, char *version){
+bool hasUpdate(char *rootDomain,int rootPort, char *version, char *ts, unsigned int *ms){
   bool subCode=0;
-  Serial.println("Checking for updates...");
+  Serial.println("[Update] Checking for updates...");
   char buffer[100];
   char bffPort[6];
   String sPort=(String)rootPort;
@@ -144,11 +170,11 @@ bool hasUpdate(char *rootDomain,int rootPort, char *version){
   subCode=interpretHTTPCode(httpCode);
 
   if (!subCode){
-    Serial.println("Update request failed");
+    Serial.println("[No Update] request failed");
     Serial.println("");
     strcpy(version,""); // [MJ] Se updatee falha, string da versão preenchida com vazio
   }else{
-    Serial.println("Update request sucess");
+    Serial.println("[Update] request sucess");
     Serial.println("");
 
     String strPayload = http.getString();
@@ -157,6 +183,7 @@ bool hasUpdate(char *rootDomain,int rootPort, char *version){
     if (strPayload!="[]"){
       getVersion(strPayload,version);
     }
+    getCurrentTime(ts, ms);
   }
   http.end();   //Close connection
 
@@ -175,7 +202,9 @@ void checkForUpdates(char *rootDomain,int rootPort, char *expectedVersion, UPDAT
     _last_time_update_check = millis();
 
     char version[16];
-    if (hasUpdate(rootDomain, rootPort, version)){
+    char ts[16] = {"\0"};
+    unsigned int ms;
+    if (hasUpdate(rootDomain, rootPort, version, ts, &ms)){
         if(String(version).indexOf(String(expectedVersion))>=0 || String(version)==""){
             Serial.println("UPDATING....");
             ESPHTTPKonkerUpdate ESPhttpKonkerUpdate;
@@ -190,7 +219,7 @@ void checkForUpdates(char *rootDomain,int rootPort, char *expectedVersion, UPDAT
                     break;
                 case HTTP_UPDATE_OK:
                     // Serial.println("[Update] Not sending confirmation!!! D:D:D:D:");
-                    updateSucessCallBack(version);
+                    updateSucessCallBack(version, ts, ms);
                     ESP.restart();
                     break;
             }

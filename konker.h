@@ -131,10 +131,10 @@ void setName(char newName[6]){
 		size = MAX_NAME_SIZE-1;
 	}
     strncpy(NAME, newName, size);
-	NAME[MAX_NAME_SIZE-1] = '\0';
+	NAME[size] = '\0';
 
 #ifndef ESP32
-    String stringNewName=String(NAME) + String(ESP.getChipId());
+    String stringNewName=String(NAME) + String("_") + String(ESP.getChipId());
 #else
     String stringNewName=String(NAME) + (uint32_t)ESP.getEfuseMac();
 #endif
@@ -144,7 +144,7 @@ void setName(char newName[6]){
 void konkerCurrentTime(char * timestamp, unsigned int * ms)
 {
     getTimeNTP(timestamp, ms);
-    Serial.println("From NTPHelper: ");
+    Serial.print("From NTPHelper: ");
     Serial.println(timestamp);
 }
 
@@ -713,13 +713,16 @@ void getWifiCredentialsEncripted(){
 	webServer.send(200, "text/html", page);
 }
 
-//while connected to ESP wifi make a GET to http://192.168.4.1/wifisave?s=SSID_NAME&p=SSID_PASSWORD
+//while connected to ESP wifi make a GET to http://192.168.4.1/wifisave?s0=SSID_NAME&p0=SSID_PASSWORD
 void getWifiCredentialsNotEncripted(){
 	Serial.println("Handle getWifiCredentials (not encrypted)");
 	String page = "<http><body><b>getWifiCredentials</b></body></http>";
 
 	//get up to 3 wifi credentials
-	for(int i=0;i<3;i++){
+	for(int i=0;i<3;i++)
+    {
+        Serial.print("URL args: ");
+        Serial.println(webServer.arg("s"));
 		String argSSID = urldecode(webServer.arg("s" + String(i)));
 		String argPSK = urldecode(webServer.arg("p" + String(i)));
 
@@ -728,9 +731,15 @@ void getWifiCredentialsNotEncripted(){
 
 
 		if(argSSID!="") { // && argPSK!=""){
+            Serial.print("[getWifiCredentialsNotEncripted] number of wifi credentials = ");
+            Serial.println(numWifiCredentials);
+            // [MJ] Quick fix for numWifiCredentials
+            // if(i == 0 && wifiCredentials[i].savedSSID[0] != '\0')
+            // {
+            //     numWifiCredentials++;
+            // }
 			argSSID.toCharArray(wifiCredentials[i].savedSSID, 32);
 			argPSK.toCharArray(wifiCredentials[i].savedPSK, 64);
-			numWifiCredentials++;
 			gotCredentials=1;
 		}
 	}
@@ -738,11 +747,14 @@ void getWifiCredentialsNotEncripted(){
 	if(gotCredentials){
 		// reset wifi credentials from file
 		//Removing the Wifi Configuration
+        Serial.println("Removing old WiFi credentials");
 		SPIFFS.remove(wifiFile);
 	}
 
 	webServer.send(200, "text/html", page);
 }
+
+// [MJ] Function to receive platform credentials
 
 void setWifiCredentialsNotEncripted(const char *SSID1,const  char *PSK1){
 	// reset wifi credentials from file
@@ -888,7 +900,7 @@ bool startAPForWifiCredentials(char *apName, int timoutMilis){
 	Serial.println("Client connected");
 
 
-	Serial.println("local ip");
+	Serial.println("Local IP ");
 	Serial.println(WiFi.localIP());
 
 	gotCredentials=0;
@@ -1095,8 +1107,10 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
 
 	int arquivoWifiPreConfigurado=0;
 
-	if(strcmp(WiFi.SSID().c_str(),(char*)"KonkerDevNetwork")!=0){
-		if(WiFi.SSID().c_str()[0]!='\0'){
+	if(strcmp(WiFi.SSID().c_str(),(char*)"KonkerDevNetwork")!=0)
+    {
+		if(WiFi.SSID().c_str()[0]!='\0')
+        {
 			Serial.println("Saving wifi memory");
 			Serial.print("numWifiCredentials=");
 			Serial.println(numWifiCredentials);
@@ -1194,7 +1208,8 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
 		}
 
 		Serial.println("WiFi configuration done!");
-		Serial.println("Saving wifi memory");
+		Serial.print("Saving wifi memory x");
+        Serial.println(numWifiCredentials);
 		for(unsigned int i=0;i<numWifiCredentials;i++){
 			saveWifiConnectionInFile(wifiFile,wifiCredentials[i].savedSSID,wifiCredentials[i].savedPSK, i);
 		}

@@ -91,7 +91,7 @@ bool parse_JSON_dataItem_from_array(String json, char *itemName, char *returnVal
 bool parseJSON_data(String json, char *itemName, char *returnVal){
 	if(parse_JSON_item(json,itemName,returnVal)){
 		return 1;
-    }else{ 
+    }else{
         if(parse_JSON_dataItem_from_array(json,itemName,returnVal)){
 			return 1;
         }else{
@@ -224,7 +224,7 @@ unsigned int updateJsonArrayFile(String filePath, String jsonString, unsigned in
 	JsonObject jsonParsed = jsonBuffer.as<JsonObject>();
 	Serial.println("ORIGINAL");
 	Serial.println(jsonString);
-	Serial.println("DOC BUFFE");
+	Serial.println("DOC BUFFER");
 	serializeJson(jsonBuffer, Serial);
 	Serial.println("\nDOC OBJECT ROOT");
 	serializeJson(jsonParsed, Serial);

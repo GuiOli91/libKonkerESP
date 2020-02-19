@@ -35,7 +35,7 @@ bool connectMQTT(char r_server[], int r_port, char r_device_login[], char r_devi
     int connectCode = 0;
 
     if(client.connected()){
-        Serial.print("Already connected to MQTT broker ");
+        Serial.println("Already connected to MQTT broker ");
         return 1;
     }else{
         Serial.print("Going to connect to MQTT broker: ");

@@ -1,5 +1,6 @@
 #ifndef fileHelper
 #define fileHelper
+
 bool spiffsMounted=0;
 #ifdef ESP32
 #include <SPIFFS.h>
@@ -20,7 +21,7 @@ bool spiffsMount(){
 		return 1;
 	}
 }
-#else
+#else // ESP8266
 bool spiffsMount(){
 	if (spiffsMounted==0){
 		//Serial.println("Mounting FS");
@@ -38,9 +39,6 @@ bool spiffsMount(){
 	}
 }
 #endif
-
-
-
 
 void formatFileSystem(){
 	if(spiffsMount()){
@@ -88,8 +86,6 @@ bool openFile(String filePath, char *output){
 };
 bool openFile(String filePath, char *output)   __attribute__ ((deprecated("openFile is deprecated. Use readFile instead!")));
 
-
-
 bool saveFile(String filePath, char *dataToSave){
 	if(spiffsMount()){
 		File myFile = SPIFFS.open(filePath, "w");
@@ -112,7 +108,6 @@ bool saveFile(String filePath, char *dataToSave){
 	}
 }
 
-
 bool appendToFile(String filePath, char *dataToSave, int position){
 	if(spiffsMount()){
 		File myFile = SPIFFS.open(filePath, "r+");
@@ -134,14 +129,12 @@ bool appendToFile(String filePath, char *dataToSave, int position){
 	}
 }
 
-
 //Same as appendToFile, keeping writeFile name for retrocompatibility
 //DEPRECATED, use appendToFile instead
 bool writeFile(String filePath, char *dataToSave, int position){
 	return appendToFile(filePath, dataToSave, position);
 }
 bool writeFile(String filePath, char *dataToSave, int position)   __attribute__ ((deprecated("writeFile is deprecated. Use appendToFile instead!")));
-
 
 bool replaceFile(String filePath, String dataToSave){
 	if(spiffsMount()){
@@ -167,5 +160,4 @@ bool replaceFile(String filePath, String dataToSave){
 	return 0;
 }
 
-
-#endif
+#endif /* fileHelper */
