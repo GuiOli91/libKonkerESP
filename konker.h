@@ -942,7 +942,7 @@ bool set_platform_credentials(char *server, char *port, char *user, char *passwo
 	strcat(configuration,prefix);
 	strcat(configuration,"\"}\0");
 
-	Serial.println("configuration=" + String(configuration));
+	Serial.println("Configuration=" + String(configuration));
 		//cria file system se não existir
 	spiffsMount();
     File configFile = SPIFFS.open("/crd.json", "w");
@@ -955,7 +955,7 @@ bool set_platform_credentials(char *server, char *port, char *user, char *passwo
     configFile.print(configuration);
     configFile.close();
 
-    //Removing the Wifi Configuration
+    //Removing the Wifi Configuration [MJ] Again, why?
     SPIFFS.remove(wifiFile);
     //save hinitial ealth state flags
     saveFile(healthFile,(char*)"000");
@@ -966,55 +966,84 @@ bool set_platform_credentials(char *server, char *port, char *user, char *passwo
 }
 
 ///////////////////////////////////
-bool get_platform_credentials_from_configurator(){
+bool get_platform_credentials_from_configurator()
+{
     //Creating the variables we will use: "response" to keep the Server response and "address" to keep the address used to access the server
     String response = "";
-    String gateway_IP = WiFi.gatewayIP().toString();
+    String gateway_IP = "192.168.1.126";//WiFi.gatewayIP().toString();
 	Serial.println("Get platform credentials...");
 
-    // [MJ] Rodando localmente, a porta do serviço é 8081
-    String address = "http://" + gateway_IP + ":8081/" + String(getChipId());
-	Serial.println("address=" + address);
+    // [MJ] Rodando localmente, coloquei o servidor na porta 8084
+    String address = "http://" + gateway_IP + ":8084/credentials?node=" + String(getChipId());
+	Serial.println("Address=" + address);
 
     //The IP of our client is the Gateway IP
 	HTTPClient http;
 
-	Serial.println("setting timeuot to 50s");
-
+	Serial.println("Setting timeout to 50s");
 	http.setTimeout(50000); // 50 segundos de timeout
 
     http.begin(address);     //Specify request destination
     int statusCode = http.GET();
 
 	response=http.getString();
+    http.end();
 
 	Serial.println("statusCode=" + String(statusCode));
-	Serial.println("response=" + String(response));
-    if (statusCode == 200){
-        File configFile = SPIFFS.open("/crd.json", "w");
-        if (!configFile) {
-            if (DEBUG) Serial.println("Could not open the file with write permition!");
+	Serial.println("Response=" + String(response));
+    if (statusCode == 200)
+    {
+        StaticJsonDocument<1024> jsonMSG;
+        DeserializationError err = deserializeJson(jsonMSG, response);
+
+        if (err)
+        {
+            Serial.print("Error deserilazing response: ");
+            Serial.println(err.c_str());
             return 0;
         }
-    	Serial.println("Saving config file /crd.json");
-        configFile.print(response);
-        configFile.close();
+        if (jsonMSG.containsKey("node_name"))
+        {
+            char newName[6];
+            strncpy(newName, jsonMSG["node_name"].as<char*>(), 6);
+            setName(newName);
+        }
+        bool set_cred;
+        set_cred = set_platform_credentials((char*)jsonMSG["srv"].as<char*>(), (char*)jsonMSG["prt"].as<char*>(), (char*)jsonMSG["usr"].as<char*>(),
+                                            (char*)jsonMSG["pwd"].as<char*>(), (char*)jsonMSG["prx"].as<char*>());
+        if(!set_cred)
+        {
+            return 0;
+        }
 
-        //Removing the Wifi Configuration
-        SPIFFS.remove(wifiFile);
-        //save hinitial ealth state flags
-        saveFile(healthFile,(char*)"000");
+        // File configFile = SPIFFS.open("/crd.json", "w");
+        // if (!configFile)
+        // {
+        //     if (DEBUG) Serial.println("Could not open the file with write permition!");
+        //     return 0;
+        // }
+    	// Serial.println("Saving config file /crd.json");
+        // configFile.print(response);
+        // configFile.close();
+
+        //Removing the Wifi Configuration [MJ] Hmmmm, any reason for that?
+        // SPIFFS.remove(wifiFile);
+        //save initial ealth state flags
+        // saveFile(healthFile,(char*)"000");
 
         //wifiManager.resetSettings();
 
-        if (DEBUG){
+        if (DEBUG)
+        {
             Serial.print("Status code from server :");
             Serial.println(statusCode);
             Serial.print("Response body from server: ");
             Serial.println(response);
         }
         return 1;
-    } else {
+    }
+    else
+    {
         return 0;
     }
 }
@@ -1099,7 +1128,9 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
         if(getPlataformCredentials((char*)"/crd.json")){
         	checkConnections();
         }
-        return;
+        // [MJ] Connected to wifi, but credetials are not correct
+        // return;
+        yield();
     }
 
     // [MJ] Inicia conexão com servidor NTP
@@ -1107,15 +1138,17 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
 
 	int arquivoWifiPreConfigurado=0;
 
+    // [MJ] If wifi ssid is NOT KonkerDevNetwork
 	if(strcmp(WiFi.SSID().c_str(),(char*)"KonkerDevNetwork")!=0)
     {
+        // if wifi ssid is not empty
 		if(WiFi.SSID().c_str()[0]!='\0')
         {
-			Serial.println("Saving wifi memory");
+			Serial.println("Saving wifi to memory");
 			Serial.print("numWifiCredentials=");
 			Serial.println(numWifiCredentials);
 
-			//ordering
+			//ordering [MJ] WHY? Is it necessary?
 			for(unsigned int i=0;i<numWifiCredentials-1;i++){
 				char tempSSID[32]="";
 				char tempPSK[64]="";
@@ -1151,17 +1184,19 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
     arquivoWifiPreConfigurado=getPlataformCredentials((char*)"/crd.json");//se for outro nome é só mudar aqui
 
 	while (!arquivoWifiPreConfigurado){
+        delay(1000); //wait 1s before trying again
 		//only exits this function if connected or reached timout, only connect if specific signal strength is mesured (47dBm)
-		checkForFactoryWifi((char*)"KonkerDevNetwork",(char*)"konkerkonker123",47,10000);
+		// checkForFactoryWifi((char*)"KonkerDevNetwork",(char*)"konkerkonker123",47,10000);
 		//se conectar no FactoryWifi
 		//baixar arquivo pré wifi
-
+        Serial.println("Calling get_platform_credentials_from_configurator...");
 		get_platform_credentials_from_configurator();
 		//retorno da função do Luis 1 -> recebeu e guardou o arquivo wifipré. 0->deu algum problema e não tem wifipré
 		//se tiver arquivo pré wifi
 		//configura pré wifi
 		//Formato esperado: {"srv":"mqtt.demo.konkerlabs.net","prt":"1883","usr":"jnu56qt1bb1i","pwd":"3S7usR9g5K","prx":"data"}
 		arquivoWifiPreConfigurado=getPlataformCredentials((char*)"/crd.json");//se for outro nome é só mudar aqui
+        yield();
 	}
 
     //desliga led indicando que passou pela configuração de fábrica
@@ -1171,19 +1206,10 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
 	Serial.print(">>>>>>>>> DEVICE MAC ADDRESS = ");
 	Serial.println(WiFi.macAddress());
 
+    // [MJ] Tendi foi eh nada, passa aqui pq apagou arquivo de wifi antes?
 	//esta parte só chega se já passou pelo modo fábrica acima
-	//lembrando
-	//global variables: server, port, device_login, device_pass
-	//variables delcared in main.h from LibKonkerESP8266
-	//char server[64];
-	//int port;
-	//char device_login[32];
-	//char device_pass[32];
-
 	//Tem arquivo wifi? Se tem configura o wifi
 	//se não tem entra em modo AP
-
-	//aqui
 	if(tryConnectClientWifi()){
         return;
     }

@@ -78,7 +78,8 @@ bool connectMQTT(char r_server[], int r_port, char r_device_login[], char r_devi
 }
 
 bool connectMQTT(){
-	return connectMQTT(server,port,device_login,device_pass);
+    return connectMQTT(_rootDomain, _rootPort, device_login, device_pass);
+	// return connectMQTT(server,port,device_login,device_pass);
 }
 
 void buildMQTTSUBTopic(char const channel[], char *topic){

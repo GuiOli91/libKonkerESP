@@ -6,7 +6,7 @@
 #include "NTPClient.h"
 
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "192.168.0.123");
+NTPClient timeClient(ntpUDP, "192.168.1.126");
 
 void startNTP()
 {
@@ -26,10 +26,10 @@ void getTimeNTP(char * timestamp, unsigned int *ms)
 
     r = timeClient.getEpochTimeMs(ms);
     // Serial.print("From NTPClient [int]: " );
-    Serial.println(r);
+    // Serial.println(r);
     sprintf(timestamp, "%lu", r);
     // Serial.print("From NTPClient: ");
-    Serial.println(timestamp);
+    // Serial.println(timestamp);
 }
 
 #endif NTPHelper
