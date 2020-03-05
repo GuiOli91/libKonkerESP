@@ -970,12 +970,12 @@ bool get_platform_credentials_from_configurator()
 {
     //Creating the variables we will use: "response" to keep the Server response and "address" to keep the address used to access the server
     String response = "";
-    String gateway_IP = "192.168.1.126";//WiFi.gatewayIP().toString();
+    String gateway_IP = String(_httpDomain);//WiFi.gatewayIP().toString();
 	Serial.println("Get platform credentials...");
 
     // [MJ] Rodando localmente, coloquei o servidor na porta 8084
-    String address = "http://" + gateway_IP + ":8084/credentials?node=" + String(getChipId());
-	Serial.println("Address=" + address);
+    String address = String("http://") + gateway_IP + String(":8084/credentials?node=") + String(getChipId());
+	Serial.println("Address = " + address);
 
     //The IP of our client is the Gateway IP
 	HTTPClient http;
@@ -1130,7 +1130,7 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
         }
         // [MJ] Connected to wifi, but credetials are not correct
         // return;
-        yield();
+        // yield();
     }
 
     // [MJ] Inicia conexão com servidor NTP
@@ -1184,19 +1184,19 @@ void konkerConfig(char rootURL[64], char productPefix[6], bool encripted, char *
     arquivoWifiPreConfigurado=getPlataformCredentials((char*)"/crd.json");//se for outro nome é só mudar aqui
 
 	while (!arquivoWifiPreConfigurado){
-        delay(1000); //wait 1s before trying again
+        // delay(1000); //wait 1s before trying again
 		//only exits this function if connected or reached timout, only connect if specific signal strength is mesured (47dBm)
 		// checkForFactoryWifi((char*)"KonkerDevNetwork",(char*)"konkerkonker123",47,10000);
 		//se conectar no FactoryWifi
 		//baixar arquivo pré wifi
-        Serial.println("Calling get_platform_credentials_from_configurator...");
+        Serial.println("Calling [get_platform_credentials_from_configurator]");
 		get_platform_credentials_from_configurator();
 		//retorno da função do Luis 1 -> recebeu e guardou o arquivo wifipré. 0->deu algum problema e não tem wifipré
 		//se tiver arquivo pré wifi
 		//configura pré wifi
 		//Formato esperado: {"srv":"mqtt.demo.konkerlabs.net","prt":"1883","usr":"jnu56qt1bb1i","pwd":"3S7usR9g5K","prx":"data"}
 		arquivoWifiPreConfigurado=getPlataformCredentials((char*)"/crd.json");//se for outro nome é só mudar aqui
-        yield();
+        // yield();
 	}
 
     //desliga led indicando que passou pela configuração de fábrica
