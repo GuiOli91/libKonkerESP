@@ -44,6 +44,7 @@ class ESPHTTPKonkerUpdate: public ESP8266HTTPUpdate{
     Serial.println("Authorizing...");
     http.setAuthorization(device_login, device_pass);
     Serial.println("Authorization successfull");
+    // [MJ] Função recebe e checa MD5 (vem no header)
     ret = ESP8266HTTPUpdate::handleUpdate(http, currentVersion, false);
 
     Serial.println("Return code: " + ESP8266HTTPUpdate::getLastErrorString());
@@ -66,10 +67,14 @@ class ESPHTTPKonkerUpdate: public ESP32HTTPUpdate{
 };
 #endif
 
-void getVersion(String strPayload, char *version){
-    if(parse_JSON_item(strPayload,"version",version)){
+void getVersion(String strPayload, char *version)
+{
+    if(parse_JSON_item(strPayload,"version",version))
+    {
         Serial.println("New version = " + String(version));
-    }else{
+    }
+    else
+    {
         strcpy(version,"");
         Serial.println("Failed to parse version");
     }
@@ -183,7 +188,7 @@ bool hasUpdate(char *rootDomain,int rootPort, char *version, char *ts, unsigned 
     if (strPayload!="[]"){
       getVersion(strPayload,version);
     }
-    getCurrentTime(ts, ms);
+    getCurrentTime(ts, ms); // [MJ] Muda estado para UPDATING na plataforma (automaticamente)
   }
   http.end();   //Close connection
 

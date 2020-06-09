@@ -6,7 +6,7 @@
 #include "./helpers/fileHelper.h"
 #include "./helpers/jsonhelper.h"
 #include "./helpers/NTPHelper.h"
-#include <Ticker.h>
+// #include <Ticker.h> //[MJ] aparentemente não precisa desse, hmmm
 #include <Crypto.h>
 #include "./rest/pubsubREST.h"
 #include "./management/firmwareUpdate.h"
