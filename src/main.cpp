@@ -1,24 +1,22 @@
 #include "konker.h"
 ADC_MODE(ADC_VCC);
 
-const char ssid[20] = "dlink-C21E-114";
-const char pwd[20] = "nope"; //"bobesponja";
+const char ssid[20] = "Discovery22";
+const char pwd[20] = "13745097"; //"bobesponja";
 const char ssid2[20] = "OpenWrt"; //"maju_iot";
 const char pwd2[20] = "konkerkonker";
  //"unicamp123";
 
 // Dados do servidor
-String server_ip = "192.168.1.123";
+String server_ip = "mqtt.prod.konkerlabs.net";
 // String server_ip = "mqtt.prod.konkerlabs.net";
-int mqtt_port = 32768;
+int mqtt_port = 1883;
 // int mqtt_port = 1883;
-int http_port = 8082;
+int http_port = 80;
 
-// String DEV_ID = "node10";
-// String USER = "t97pvjblbeas";
-// String PWD = "YJ2GskQvqU8S";
-// String USER = "j761nvqo5qoq"; //"pgdmna95n2o2"; //"t97pvjblbeas";
-// String PWD = "8FVki75P8AAy"; //"HnWDYsNGdlcb"; //"YJ2GskQvqU8S";
+String DEV_ID = "Esp1";
+String USER = "77blr7df83he";
+String PWD = "djQhiWqtxtOv";
 
 String PUB = "temp";
 
@@ -54,12 +52,12 @@ void setup()
 {
   Serial.println("\nStarting setup!");
   Serial.println("====== Setting up credentials ======");
-  device.addWifi(ssid2, pwd2);
   device.addWifi(ssid, pwd);
+  device.addWifi(ssid2, pwd2);
   device.setDefaultConnectionType(ConnectionType::MQTT);
   // device.setServer(server_ip, mqtt_port);
   device.setServer(server_ip, mqtt_port, http_port);
-  // device.setPlatformCredentials(DEV_ID, USER, PWD);
+  device.setPlatformCredentials(DEV_ID, USER, PWD);
 
   Serial.println("====== Connecting ======");
   // start wifi and platform connection

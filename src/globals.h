@@ -3,7 +3,7 @@
 
 #include <ArduinoLog.h>
 
-#define LOCAL_BUILD
+// #define LOCAL_BUILD
 
 #define _STATUS_LED 2
 
